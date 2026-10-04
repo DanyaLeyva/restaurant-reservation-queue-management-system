@@ -1,50 +1,26 @@
-// frontend/src/StaffPage.jsx
-// Owner: Chyna
 // Staff side
+// Owner: Danya
+
+// TODO (Danya): Display the restaurant's reservations
+// GET /api/reservations
+
+// TODO (Danya): Display the current waitlist
+// GET /api/waitlist
+
+// TODO (Danya): Add a control for assigning a table
+// POST /api/waitlist/<waitlist_id>/assign-table
+
+// TODO (Danya): Add a control for notifying a customer
+// POST /api/waitlist/<waitlist_id>/notify
+
+// TODO (Danya): Display restaurant tables and their availability
+// GET /api/tables
+
+// TODO (Danya): Allow staff to update whether a table
+// is available or occupied
+// PATCH /api/tables/<table_id>/status
 
 function StaffPage() {
-
-  // Use these exact field names:
-
-  // Reservations:
-  // reservation_id, customer_name, customer_phone,
-  // party_size, reservation_time, status, table_id
-
-  // Waitlist:
-  // waitlist_id, customer_name, customer_phone,
-  // party_size, status, table_id, joined_at
-
-  // Tables:
-  // table_id, table_number, capacity, status
-
-
-  // TODO (Chyna): Display the reservation list
-  // GET /api/reservations
-
-
-  // TODO (Chyna): Display the current waitlist
-  // GET /api/waitlist
-
-
-  // TODO (Chyna): Add buttons for staff to assign a table
-  // to a customer on the waitlist
-  // POST /api/waitlist/<waitlist_id>/assign-table
-
-
-  // TODO (Chyna): Add a button for staff to notify a customer
-  // when their table is ready
-  // POST /api/waitlist/<waitlist_id>/notify
-
-
-  // TODO (Chyna): Display the restaurant tables
-  // and whether each table is available or occupied
-  // GET /api/tables
-
-
-  // TODO (Chyna): Allow staff to change a table's status
-  // PATCH /api/tables/<table_id>/status
-
-
   return <h1>Staff Page</h1>
 }
 
