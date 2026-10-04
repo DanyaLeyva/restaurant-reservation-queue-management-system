@@ -35,26 +35,28 @@ Customers will be able to make, view, and cancel reservations and join a waitlis
 
 ### Danya Leyva
 
-**Project Manager, Customer Frontend, and Testing**
+**Project Manager, Customer & Staff Frontend, and Testing**
 
 - Manage the GitHub repository and project organization
 - Coordinate tasks and integration
 - Develop the customer interface
 - Create the reservation and waitlist forms
 - Allow customers to view and cancel reservations
+- Develop the staff interface
+- Display reservations, waitlist entries, and table availability for staff
+- Add staff controls for assigning tables, updating table status, and notifying customers
 - Perform system and integration testing
 
 ### Chyna Green-Bostick
 
-**Staff Frontend**
+**Table Allocation**
 
-- Develop the staff interface
-- Display reservations and the current waitlist
-- Display restaurant tables and their availability
-- Add controls for assigning tables and updating table status
-- Add controls for notifying customers when their table is ready
+- Develop the table-allocation functionality using Python
+- Find available tables based on party size and table capacity
+- Make sure only available tables are considered
+- Return no table when an appropriate table is unavailable so the customer can remain on the waitlist
 
-### Kristopher Ryan Manalang
+### Kristopher Ryan Manalong
 
 **Flask and Reservation Backend**
 
@@ -62,7 +64,6 @@ Customers will be able to make, view, and cancel reservations and join a waitlis
 - Connect backend routes to the Flask application
 - Develop reservation functionality
 - Allow reservations to be created, viewed, and cancelled
-- Work with Eduardo on table allocation
 
 ### Alejandro Garcia
 
@@ -81,10 +82,7 @@ Customers will be able to make, view, and cancel reservations and join a waitlis
 - Set up the Flask and MySQL connection
 - Manage restaurant table information
 - Handle table availability and status
-- Work with Kristopher on table allocation
 
-## Shared Development
+## Team Development
 
-Kristopher and Eduardo will work together on the table-allocation functionality, which will match customers with available tables based on party size.
-
-Team members will work primarily on their assigned components and collaborate when connecting the frontend, backend, and database.
+Team members will work primarily on their assigned components and collaborate when connecting the React frontend, Flask backend, and MySQL database.
