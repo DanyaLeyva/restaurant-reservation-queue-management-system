@@ -27,7 +27,7 @@ Customers will be able to make, view, and cancel reservations and join a waitlis
 
 - Danya Leyva
 - Chyna Green-Bostick
-- Kristopher Ryan Manalong
+- Kristopher Ryan Manalang
 - Alejandro Garcia
 - Eduardo Salvador
 
@@ -56,7 +56,7 @@ Customers will be able to make, view, and cancel reservations and join a waitlis
 - Make sure only available tables are considered
 - Return no table when an appropriate table is unavailable so the customer can remain on the waitlist
 
-### Kristopher Ryan Manalong
+### Kristopher Ryan Manalang
 
 **Flask and Reservation Backend**
 
