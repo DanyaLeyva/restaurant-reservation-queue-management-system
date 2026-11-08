@@ -1,5 +1,5 @@
 # Flask backend. Main file that starts the server.
-# Owner: Kristopher Ryan Manalong
+# Owner: Kristopher Ryan Manalang
 
 from flask import Flask, jsonify
 

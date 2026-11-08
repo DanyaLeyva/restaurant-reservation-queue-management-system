@@ -1,5 +1,5 @@
 # backend/routes/reservations.py
-# Owner: Kristopher Ryan Manalong
+# Owner: Kristopher Ryan Manalang
 # Handles customer reservations
 
 from flask import Blueprint, request, jsonify
