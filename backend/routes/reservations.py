@@ -59,9 +59,9 @@ def create_reservation():
     # Manipulating MySQL Database
     # Establish communication with Python and mySQL database
     connection = mysql.connector.connect(
-        host = os.environ["DB_HOST"]
-        user = os.environ["DB_USER"]
-        password = os.environ["DB_PASSWORD"]
+        host = os.environ["DB_HOST"],
+        user = os.environ["DB_USER"],
+        password = os.environ["DB_PASSWORD"],
         database = "restauranttest"
     )
 
@@ -103,6 +103,7 @@ def create_reservation():
     # Confirm and commit changes to MySQL database
     connection.commit()
     cursor.close()
+    connection.close()
 
     # Confirm reservation and send back to frontend
     response = {"message" : "Reservation has been made.",
@@ -114,6 +115,28 @@ def create_reservation():
 
 # TODO (Kristopher): View all reservations
 # GET /api/reservations
+@reservations_bp.route("/api/reservations", methods = ["GET"])
+def view_all_reservations():
+    # Connect to MySQL database
+    connection = mysql.connector.connect(
+            host = os.environ["DB_HOST"],
+            user = os.environ["DB_USER"],
+            password = os.environ["DB_PASSWORD"],
+            database = "restauranttest"
+        )
+    cursor = connection.cursor(dictionary = True) # Get results from query as a dictionary
+    
+    # From reservations database, obtain all reservation information
+    query = "SELECT * FROM reservations"
+
+    cursor.execute(query) # execute the query
+
+    # Grab the reservation records / results of cursor execution of query
+    reservation_list = cursor.fetchall()
+    cursor.close()
+
+    return jsonify({"message" : "Reservation List",
+                    "reservations" : reservation_list}), 200
 
 # TODO (Kristopher): View reservations for one customer
 # GET /api/reservations?customer_phone=...
