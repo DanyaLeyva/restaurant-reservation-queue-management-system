@@ -140,6 +140,11 @@ def view_all_reservations():
 
 # TODO (Kristopher): View reservations for one customer
 # GET /api/reservations?customer_phone=...
+# notes: currently, the phone number for customer is stored in customer, not reservations
+# either database for reservations adds phone numbers, or we need to do joining
+@reservations_bp.route("/api/reservations", methods = ["GET"])
+def view_customer_reservation():
+    status = request.args.get()
 
 # TODO (Kristopher): Cancel a reservation
 # PATCH /api/reservations/<reservation_id>/cancel
