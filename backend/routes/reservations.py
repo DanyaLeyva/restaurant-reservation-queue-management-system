@@ -198,3 +198,53 @@ def view_customer_reservation():
 # TODO (Kristopher): Cancel a reservation
 # PATCH /api/reservations/<reservation_id>/cancel
 # Change the reservation status to "cancelled"
+@reservations_bp.route("/api/reservations/<int:reservation_id>/cancel", methods = ["PATCH"])
+def cancel_reservation(reservation_id):
+    # Connect to MySQL database
+    connection = mysql.connector.connect(
+                 host = os.environ["DB_HOST"],
+                 user = os.environ["DB_USER"],
+                 password = os.environ["DB_PASSWORD"],
+                 database = "restauranttest"
+                 )
+        
+    # Allow SQL commands to execute via an existing connection
+    cursor = connection.cursor(dictionary = True)
+
+    # Query to look at if the reservation exists
+    exist_check_query = """
+                        select status
+                        from reservations
+                        where reservation_id = %s
+                        """
+
+    cursor.execute(exist_check_query, (reservation_id, ))
+    reservation = cursor.fetchone()
+
+    if reservation is None: # check if reservation exists first
+        cursor.close()
+        connection.close()
+        return jsonify({"error" : "Reservation does not exist."}), 404
+    
+    if reservation["status"] == "cancelled": # check if reservation has already been cancelled
+        cursor.close()
+        connection.close()
+        return jsonify({"message" : "Reservation has already been cancelled."}), 200
+
+    # Query to update the reservation identified by the id, and checked earlier to be confirmed
+    query = """
+            UPDATE reservations
+            SET status = %s 
+            WHERE reservation_id = %s
+            AND status = %s
+            """
+
+    # Execute query to perform updates, and commit update
+    cursor.execute(query, ("cancelled", reservation_id, "confirmed")) # counts only those it changed, not the total observations that have status "cancelled"
+    connection.commit()
+
+    # Close cursor and connections
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message" : "Reservation has successfully been cancelled"}), 200
