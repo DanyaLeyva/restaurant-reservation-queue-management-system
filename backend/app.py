@@ -2,6 +2,11 @@
 # Owner: Kristopher Ryan Manalang
 
 from flask import Flask, jsonify
+from flask_cors import CORS
+
+from routes.reservations import reservations_bp
+from routes.waitlist import waitlist_bp
+from routes.tables import tables_bp
 
 app = Flask(__name__)
 
@@ -10,10 +15,17 @@ app = Flask(__name__)
 # - waitlist.py
 # - tables.py
 
+app.register_blueprint(reservations_bp)
+app.register_blueprint(waitlist_bp)
+app.register_blueprint(tables_bp)
+
 # TODO (Kristopher): Set up CORS so the React frontend
 # can communicate with the Flask backend
+# Allow CORS to access all routes; CORS cross-origin resource sharing which determines if the frontend can communicate with the backend despite having different origins
+CORS(app)
 
 
+# Check health
 @app.route("/api/health")
 def health():
     return jsonify({"status": "ok"})
