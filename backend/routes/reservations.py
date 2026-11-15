@@ -1,6 +1,7 @@
 # backend/routes/reservations.py
 # Owner: Kristopher Ryan Manalang
 # Handles customer reservations
+# REQUIRED LIBRARIES: flask, mysql.connector, and os (os is not required to download, comes with Python Standard Library)
 
 from flask import Blueprint, request, jsonify
 import mysql.connector

@@ -1,6 +1,7 @@
 # Flask backend. Main file that starts the server.
 # Owner: Kristopher Ryan Manalang
 
+# REQUIRED LIBRARIES: flask, flask_cors
 from flask import Flask, jsonify
 from flask_cors import CORS
 
