@@ -22,6 +22,7 @@ reservations_bp = Blueprint("reservations", __name__)
 
 # Create route, accept POST requests to send data
 @reservations_bp.route("/api/reservations", methods = ["POST"])
+
 def create_reservation():
     # Get reservation information from HTTP request/frontend (ex. customer fills out information)
     data = request.get_json()
@@ -116,6 +117,7 @@ def create_reservation():
 # TODO (Kristopher): View all reservations
 # GET /api/reservations
 @reservations_bp.route("/api/reservations", methods = ["GET"])
+
 def view_all_reservations():
     # Connect to MySQL database
     connection = mysql.connector.connect(
@@ -134,17 +136,64 @@ def view_all_reservations():
     # Grab the reservation records / results of cursor execution of query
     reservation_list = cursor.fetchall()
     cursor.close()
+    connection.close()
 
     return jsonify({"message" : "Reservation List",
                     "reservations" : reservation_list}), 200
 
 # TODO (Kristopher): View reservations for one customer
 # GET /api/reservations?customer_phone=...
-# notes: currently, the phone number for customer is stored in customer, not reservations
-# either database for reservations adds phone numbers, or we need to do joining
 @reservations_bp.route("/api/reservations", methods = ["GET"])
+
 def view_customer_reservation():
-    status = request.args.get()
+
+    # Obtain customer's phone number from the url
+    customer_phone = request.args.get("customer_phone")
+
+    # Connect to MySQL database
+    connection = mysql.connector.connect(
+                 host = os.environ["DB_HOST"],
+                 user = os.environ["DB_USER"],
+                 password = os.environ["DB_PASSWORD"],
+                 database = "restauranttest"
+                 )
+    
+    # Allow SQL commands to execute via an existing connection
+    cursor = connection.cursor()
+
+    # Make a query that searches for the customer id based on customer phone number
+    customer_query = """
+                     SELECT customer_id
+                     FROM customer
+                     WHERE customer_phone_number = %s
+                     """
+
+    cursor.execute(customer_query, (customer_phone,))
+
+    customer = cursor.fetchone() # grab the customer from the database, should return a tuple (ex. (5,))
+    if customer:
+        customer_id = customer[0] # extract id from tuple
+    elif customer is None:
+        cursor.close()
+        connection.close()
+        return jsonify({"error" : "Customer does not exist."}), 404
+
+
+    # Make a secondary query that searches for a specific customer's reservations based on their ID
+    reservation_query = """
+                        SELECT *
+                        FROM reservations
+                        WHERE customer_id = %s
+                        """
+
+    cursor.execute(reservation_query, (customer_id, ))
+    customer_reservations = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message" : "Reservations In Progress",
+                    "reservations" : customer_reservations}), 200
 
 # TODO (Kristopher): Cancel a reservation
 # PATCH /api/reservations/<reservation_id>/cancel
