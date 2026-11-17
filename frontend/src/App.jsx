@@ -5,9 +5,6 @@
 // TODO (Danya): Connect CustomerPage.jsx and StaffPage.jsx
 // TODO (Danya): Add a way to choose between Customer and Staff views
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 import CustomerPage from './CustomerPage'
 import StaffPage from './StaffPage'
