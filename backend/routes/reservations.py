@@ -40,7 +40,7 @@ def create_reservation():
 
     # DATA VALIDATIONS
     # a. Validate customer_name
-    if (type(customer_name) is not str or not customer_name.strip()): # empty string considered falsy, use .strip so we can also prevent "   " strings from being accepted
+    if (type(customer_name) is not str or not customer_name.strip()): # empty string considered falsy, use .strip() so we can also prevent "   " strings from being accepted ("".strip() evaluates to false)
         return jsonify({"error" : "Invalid name"}), 400
 
     # b. Validate customer_phone (must be type str, not empty)
