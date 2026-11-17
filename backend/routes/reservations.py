@@ -32,26 +32,39 @@ def create_reservation():
     if not isinstance(data, dict):
         return jsonify({"error" : "Invalid JSON data"}), 400
 
-    # Access information by key
+    # Access information by key + validate
+    # a. customer name
     customer_name = data.get("customer_name") # Using this format to avoid KeyError if key does not exist
-    customer_phone = data.get("customer_phone")
-    party_size = data.get("party_size")
-    reservation_time = data.get("reservation_time")
 
-    # DATA VALIDATIONS
-    # a. Validate customer_name
+    # Validate customer_name (must be type str, not empty)
     if (type(customer_name) is not str or not customer_name.strip()): # empty string considered falsy, use .strip() so we can also prevent "   " strings from being accepted ("".strip() evaluates to false)
         return jsonify({"error" : "Invalid name"}), 400
 
-    # b. Validate customer_phone (must be type str, not empty)
+    # b. customer phone
+    # for customer phone, it is stored as xxx-xxx-xxxx. 
+    customer_phone = data.get("customer_phone")
+
+    # validate customer_phone (must be type str, not empty.)
     if (type(customer_phone) is not str or not customer_phone.strip()):
         return jsonify({"error" : "Invalid phone number"}), 400
 
-    # c. Validate party_size (must be type int and at least of size 1)
+    customer_phone = customer_phone.strip().replace("-", "") # remove the "-" to make a string with 10 digits from 0-9
+
+    # validate customer_phone (must be str size 10, and the str must be digits)
+    if (len(customer_phone) != 10 or not customer_phone.isdigit() or not customer_phone.isascii()):
+        return jsonify({"error" : "Invalid phone number"}), 400
+
+    # c. Party size
+    party_size = data.get("party_size")
+
+    # Validate party_size (must be type int and at least of size 1)
     if (type(party_size) is not int or party_size < 1):
         return jsonify({"error" : "Invalid party size"}), 400
 
-    # d. Validate reservation_time (must be type str or not empty) # IMPROVE THIS: we still can accept any nonempty string, so use isoformat
+    # d. Reservation time
+    reservation_time = data.get("reservation_time")
+
+    # Validate reservation_time (must be type str or not empty) # IMPROVE THIS: we still can accept any nonempty string, so use isoformat
     if (type(reservation_time) is not str or not reservation_time.strip()): 
         return jsonify({"error" : "Invalid reservation time"}), 400
 
