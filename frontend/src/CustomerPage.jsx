@@ -4,6 +4,69 @@
 
 import { useState } from "react";
 
+function CustomerLogin() {
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleLogin(event) {
+    event.preventDefault();
+
+    //TODO: connect to backend authentication API
+    //Do not grant access until the backend verifies credentials.
+
+    alert("Customer login is not connected yet.");
+  }
+  return (
+    <section className="customer-login">
+      <h1>Customer Login</h1>
+      <p> Log in to manage your BEAU Reservations</p>
+
+      <form onSubmit={handleLogin}>
+        <label htmlFor="login_phone">Phone Number</label>
+        <input
+          id="login_phone"
+          type="tel"
+          inputMode="numeric"
+          maxLength={14}
+          pattern="\([0-9]{3}\) [0-9]{3}-[0-9]{4}"
+          title="Enter a 10-digit phone number"
+          placeholder="(123) 456-6789"
+          value={phone}
+          onChange={(event) => {
+            setPhone(formatPhoneNumber(event.target.value));
+          }}
+          required
+        />
+
+        <label htmlFor="login_password">Password</label>
+        <input
+          id="login_password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
+
+        <button type="submit"> Log In</button>
+      </form>
+      <p>Don't have an account? Sign up coming soon.</p>
+    </section>
+  );
+}
+
+function formatPhoneNumber(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+
+  if (digits.length > 6) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  if (digits.length > 3) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  }
+  return digits;
+}
+
 function CustomerPage() {
   const [reservation, setReservation] = useState({
     customer_name: "",
@@ -21,7 +84,7 @@ function CustomerPage() {
   });
 
   const [searchPhone, setSearchPhone] = useState("");
-  const [myReservation, setMyReservation] = useState([]);
+  const [myReservations, setMyReservations] = useState([]);
   const [lookupMessage, setLookupMessage] = useState("");
 
   // Use these exact field names:
@@ -51,7 +114,7 @@ function CustomerPage() {
 
     setWaitlist({
       ...waitlist,
-      [name]: name === "party_size" ? Number(value) : value,
+      [name]: name === "party_size" ? value.replace(/^0+/, "") : value,
     });
   }
 
@@ -60,6 +123,15 @@ function CustomerPage() {
 
     console.log("waitlist:", waitlist);
     alert("Waitlist form submitted (demo only).");
+  }
+
+  function handleReservationSearch(event) {
+    event.preventDefault();
+
+    console.log("Searching Reservation for: ", searchPhone);
+
+    setMyReservations([]);
+    setLookupMessage("Reservation lookup is not connected to the backend yet.");
   }
 
   // TODO (Danya): Display the customer's reservations
@@ -75,8 +147,8 @@ function CustomerPage() {
           Join Waitlist
         </button>
 
-        <button type="button" onClick={() => setActiveTab("my-reservation")}>
-          My Reservation
+        <button type="button" onClick={() => setActiveTab("my-reservations")}>
+          My Reservations
         </button>
       </div>
 
@@ -84,6 +156,10 @@ function CustomerPage() {
         <div>
           <h1>Make a Reservation</h1>
           <p>Fill out the information below to request a table.</p>
+          <p>
+            Maximum 8 guests per party. One reservation per customer per day.
+          </p>
+
           <form onSubmit={handleSubmit}>
             <label htmlFor="customer_name">Full Name</label>
             <input
@@ -101,16 +177,15 @@ function CustomerPage() {
               type="tel"
               name="customer_phone"
               inputMode="numeric"
-              maxLength={10}
-              pattern="[1-9]{10}"
+              maxLength={14}
+              pattern="\([0-9]{3}\) [0-9]{3}-[0-9]{4}"
               title="Enter a 10-digit phone number"
-              placeholder="1234567890"
+              placeholder="(123) 456-6789"
               value={reservation.customer_phone}
               onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, "");
                 setReservation({
                   ...reservation,
-                  customer_phone: value,
+                  customer_phone: formatPhoneNumber(event.target.value),
                 });
               }}
               required
@@ -123,9 +198,18 @@ function CustomerPage() {
               inputMode="numeric"
               name="party_size"
               value={reservation.party_size}
-              onChange={handleChange}
-              pattern="[1-9][0-9]*"
-              title="Enter a whole number greater than zero"
+              onChange={(event) => {
+                const value = event.target.value;
+
+                if (value === "" || /^[1-8]$/.test(value)) {
+                  setReservation({
+                    ...reservation,
+                    party_size: value,
+                  });
+                }
+              }}
+              pattern="[1-8]"
+              title="Reservation are limited to 1-8 guests"
               required
             />
 
@@ -165,16 +249,15 @@ function CustomerPage() {
               type="tel"
               name="customer_phone"
               inputMode="numeric"
-              maxLength={10}
-              pattern="[0-9]{10}"
+              maxLength={14}
+              pattern="\([0-9]{3}\) [0-9]{3}-[0-9]{4}"
               title="Enter a 10-digit phone number"
-              placeholder="1234567890"
+              placeholder="(123) 456-6789"
               value={waitlist.customer_phone}
               onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, "");
                 setWaitlist({
                   ...waitlist,
-                  customer_phone: value,
+                  customer_phone: formatPhoneNumber(event.target.value),
                 });
               }}
               required
@@ -183,18 +266,67 @@ function CustomerPage() {
             <label htmlFor="waitlist_party_size">Party Size</label>
             <input
               id="waitlist_party_size"
-              type="number"
+              type="text"
               inputMode="numeric"
               name="party_size"
               value={waitlist.party_size}
-              onChange={handleWaitlistChange}
-              pattern="[1-9][0-9]*"
-              title="Enter a whole number greater than zero"
+              onChange={(event) => {
+                const value = event.target.value;
+
+                if (value === "" || /^[1-8]$/.test(value)) {
+                  setWaitlist({
+                    ...waitlist,
+                    party_size: value,
+                  });
+                }
+              }}
+              pattern="[1-8]"
+              title="Maximum 8 guest per party"
               required
             />
 
             <button type="submit">Join Waitlist</button>
           </form>
+        </div>
+      )}
+
+      {activeTab === "my-reservations" && (
+        <div>
+          <h1>My Reservations</h1>
+          <p>Enter your phone number to find your reservations</p>
+          <form onSubmit={handleReservationSearch}>
+            <label htmlFor="search_phone"> Phone Number</label>
+            <input
+              id="search_phone"
+              type="tel"
+              inputMode="numeric"
+              maxLength={14}
+              pattern="\([0-9]{3}\) [0-9]{3}-[0-9]{4}"
+              title="Enter a 10-digit phone number"
+              placeholder="(123) 456-6789"
+              value={searchPhone}
+              onChange={(event) =>
+                setSearchPhone(formatPhoneNumber(event.target.value))
+              }
+              required
+            />
+
+            <button type="submit">Find Reservations</button>
+          </form>
+
+          {lookupMessage && <p role="status">{lookupMessage}</p>}
+          {myReservations.map((item) => (
+            <div key={item.reservation_id}>
+              <h3>Reservation #{item.reservation_id}</h3>
+              <p>Name: {item.customer_name}</p>
+              <p>Party Size: {item.party_size}</p>
+              <p>Date & Time: {item.reservation_time}</p>
+              <p>Status: {item.status}</p>
+              <button type="button" disabled>
+                Cancel Reservation
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </section>
