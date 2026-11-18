@@ -1,4 +1,3 @@
-
 def find_available_table(tables, party_size):
     """
     Find the smallest available table that can accommodate a party.
