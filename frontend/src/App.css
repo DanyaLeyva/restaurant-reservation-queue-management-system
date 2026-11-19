@@ -136,6 +136,14 @@ button:disabled {
   margin-top: 15px;
 }
 
+.customer-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+
 
 /* Staff Dashboard */
 
@@ -206,4 +214,85 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Staff Floor Plan */
+.table-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.table-card {
+  background-color: #ffffff;
+  border: 2px solid #d9ded8;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.table-card h3 {
+  color: #344538;
+  margin-top: 0;
+}
+
+.table-card p {
+  margin: 10px 0;
+}
+
+.table-card button {
+  margin-top: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .table-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Table Availability Colors */
+.table-card.available {
+  border: 2px solid #4c956c;
+  background-color: #f0f8f2;
+}
+
+.table-card.occupied {
+  border: 2px solid #c65b5b;
+  background-color: #fff2f2;
+}
+
+/* Staff Dashboard Capacity Summary */
+.capacity-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.capacity-summary p {
+  background-color: #f8f5ef;
+  border: 1px solid #d9ded8;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+  color: #344538;
+}
+
+@media (max-width: 768px) {
+  .capacity-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .capacity-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 

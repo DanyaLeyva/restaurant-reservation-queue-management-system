@@ -4,9 +4,9 @@
 
 import { useState } from "react";
 
-function CustomerLogin() {
+function CustomerLogin({ onSignUp }) {
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
 
   function handleLogin(event) {
     event.preventDefault();
@@ -19,9 +19,18 @@ function CustomerLogin() {
   return (
     <section className="customer-login">
       <h1>Customer Login</h1>
-      <p> Log in to manage your BEAU Reservations</p>
+      <p> Log in to manage your Olive & Ember Reservations</p>
 
       <form onSubmit={handleLogin}>
+        <label htmlFor="login_name">Full Name</label>
+        <input
+          id="login_name"
+          type="text"
+          placeholder="Jane Doe"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          required
+        />
         <label htmlFor="login_phone">Phone Number</label>
         <input
           id="login_phone"
@@ -38,18 +47,58 @@ function CustomerLogin() {
           required
         />
 
-        <label htmlFor="login_password">Password</label>
-        <input
-          id="login_password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
-
         <button type="submit"> Log In</button>
       </form>
       <p>Don't have an account? Sign up coming soon.</p>
+      <button type="button" onClick={onSignUp}>
+        Sign Up
+      </button>
+    </section>
+  );
+}
+function CustomerRegister() {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  function handleRegister(event) {
+    event.preventDefault();
+
+    //TODO: connect the registeration to the backend
+    alert("Customer registeration is not connected yet.");
+  }
+  return (
+    <section className="customer-register">
+      <h1> Create an Account</h1>
+      <p>Register to manage Olive & Ember reservation</p>
+
+      <form onSubmit={handleRegister}>
+        <label htmlFor="register_name">Name</label>
+        <input
+          id="register_name"
+          type="text"
+          placeholder="Jane Doe"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          required
+        />
+
+        <label htmlFor="register_phone">Phone</label>
+        <input
+          id="register_phone"
+          type="tel"
+          inputMode="numeric"
+          max={14}
+          pattern="\([0-9]{3}\) [0-9]{3}-[0-9]{4}"
+          placeholder="(123) 456-7890"
+          value={phone}
+          onChange={(event) => {
+            setPhone(formatPhoneNumber(event.target.value));
+          }}
+          required
+        />
+
+        <button type="submit">Create Account</button>
+      </form>
     </section>
   );
 }
@@ -150,6 +199,10 @@ function CustomerPage() {
         <button type="button" onClick={() => setActiveTab("my-reservations")}>
           My Reservations
         </button>
+
+        <button type="button" onClick={() => setActiveTab("login")}>
+          Log In
+        </button>
       </div>
 
       {activeTab === "reservation" && (
@@ -166,6 +219,7 @@ function CustomerPage() {
               id="customer_name"
               type="text"
               name="customer_name"
+              placeholder="Jane Doe"
               value={reservation.customer_name}
               onChange={handleChange}
               required
@@ -197,6 +251,7 @@ function CustomerPage() {
               type="text"
               inputMode="numeric"
               name="party_size"
+              placeholder="0"
               value={reservation.party_size}
               onChange={(event) => {
                 const value = event.target.value;
@@ -238,6 +293,7 @@ function CustomerPage() {
               id="waitlist_name"
               type="text"
               name="customer_name"
+              placeholder="Jhon Doe"
               value={waitlist.customer_name}
               onChange={handleWaitlistChange}
               required
@@ -269,6 +325,7 @@ function CustomerPage() {
               type="text"
               inputMode="numeric"
               name="party_size"
+              placeholder="0"
               value={waitlist.party_size}
               onChange={(event) => {
                 const value = event.target.value;
@@ -329,6 +386,11 @@ function CustomerPage() {
           ))}
         </div>
       )}
+
+      {activeTab === "login" && (
+        <CustomerLogin onSignUp={() => setActiveTab("register")} />
+      )}
+      {activeTab === "register" && <CustomerRegister />}
     </section>
   );
 }
