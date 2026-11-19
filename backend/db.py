@@ -7,7 +7,21 @@
 # reservations
 # waitlist_entries
 
-# TODO (Eduardo): add the MySQL connection settings
+import os
+from pathlib import Path
+import pyodbc
+from dotenv import load_dotenv
+
+#Find .env beside this db.py file
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+def get_connection():
+    connection_string= os.getenv("AZURE_SQL_CONNECTIONSTRING")
+
+    if not connection_string:
+        raise RuntimeError("AZURE_SQL_CONNECTIONSTRING is missing from backend/.env")
+
+    return pyodbc.connect(connection_string, timeout=10)
 
 # TODO (Eduardo): create a function that opens and returns
 # a database connection

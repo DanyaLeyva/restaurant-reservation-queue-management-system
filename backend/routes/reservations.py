@@ -4,7 +4,7 @@
 # REQUIRED LIBRARIES: flask, mysql.connector, and os (os is not required to download, comes with Python Standard Library)
 
 from flask import Blueprint, request, jsonify
-import mysql.connector
+from db import get_connection
 import os
 
 reservations_bp = Blueprint("reservations", __name__)

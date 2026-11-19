@@ -5,7 +5,7 @@
 from flask import Blueprint, request, jsonify
 import uuid
 from datetime import datetime
-from backend.notifications import notify_customer
+from notifications import notify_customer
 
 waitlist_bp = Blueprint("waitlist", __name__)
 waitlist = []
@@ -109,7 +109,7 @@ def assign_table(waitlist_id):
 # POST /api/waitlist/<waitlist_id>/notify
 # Use the notification function from notifications.py
 
-@waitlist_bp.route("/<waitlist_id/notify", methods = ["POST"])
+@waitlist_bp.route("/<waitlist_id>/notify", methods = ["POST"])
 def notify_customer(waitlist_id):
     for entry in waitlist:
         if entry["waitlist_id"] == waitlist_id:

@@ -8,11 +8,32 @@ function CustomerLogin({ onSignUp }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
-  function handleLogin(event) {
+ async function handleLogin(event) {
     event.preventDefault();
 
     //TODO: connect to backend authentication API
     //Do not grant access until the backend verifies credentials.
+
+    try{
+      const response = await fetch("http://localhost:5000/api/customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({name, phone}),
+      });
+
+      const result = await response.json();
+
+      if(!response.ok){
+        throw new Error(result.message || "Registration Failed.");
+      }
+      alert(result.message)
+      setName("");
+      setPhone("");
+    } catch (error){
+      alert(error.message);
+    }
 
     alert("Customer login is not connected yet.");
   }
@@ -64,7 +85,6 @@ function CustomerRegister() {
     event.preventDefault();
 
     //TODO: connect the registeration to the backend
-    alert("Customer registeration is not connected yet.");
   }
   return (
     <section className="customer-register">
