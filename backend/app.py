@@ -34,3 +34,9 @@ def health():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+#Eduardo, Im testing the connection to the cloud database
+
+@app.route("/")
+def home();
+    return "Flask is running"
