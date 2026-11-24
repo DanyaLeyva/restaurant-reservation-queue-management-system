@@ -27,7 +27,7 @@ def get_connection():
     if not connection_string:
         raise RuntimeError("AZURE_SQL_CONNECTIONSTRING is missing from backend/.env")
 
-    return pyodbc.connect(connection_string, timeout=10)
+    return pyodbc.connect(connection_string, timeout=30)
 
 def save_guest_reservation(
     customer_name,
@@ -66,6 +66,8 @@ def save_guest_reservation(
                     raise NoAvailableTable(
                         "No suitable table is currently available."
                     )
+                
+                table_id=selected["table_id"]
 
                 cursor.execute(
                     """
@@ -74,13 +76,14 @@ def save_guest_reservation(
                     WHERE tableID = ?
                         AND status_quo = 0
                     """,
-                    (selected["table_id"],),
+                    (table_id,),
                 )
 
                 if  cursor.rowcount != 1:
                     raise NoAvailableTable(
                         "That table is no longer available."
                     )
+                
                 
                 cursor.execute(
                     """
@@ -128,7 +131,10 @@ def save_guest_reservation(
                 reservation_id=cursor.fetchone()[0]
 
             connection.commit()
-            return reservation_id
+            return {
+                "reservation_id" : reservation_id,
+                "table_id" :table_id,
+            }
         except Exception:
             connection.rollback()
             raise
