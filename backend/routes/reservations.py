@@ -3,8 +3,16 @@
 # Handles customer reservations
 # REQUIRED LIBRARIES: flask, mysql.connector, and os (os is not required to download, comes with Python Standard Library)
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app #Eduardo, I add the current_app class
 from db import get_connection
+
+from datetime import datetime
+import re
+import pyodbc
+
+from allocation import find_available_table  #Eduardo
+from db import save_guest_reservation, NoAvailableTable        #Eduardo 
+
 import os
 
 reservations_bp = Blueprint("reservations", __name__)
@@ -26,7 +34,7 @@ reservations_bp = Blueprint("reservations", __name__)
 
 def create_reservation():
     # Get reservation information from HTTP request/frontend (ex. customer fills out information)
-    data = request.get_json()
+    data = request.get_json(silent=True)
 
     # Error: We obtain invalid JSON data
     if not isinstance(data, dict):
@@ -64,14 +72,54 @@ def create_reservation():
 
     # Validate party_size (must be type int and at least of size 1)
     if (type(party_size) is not int or party_size < 1):
-        return jsonify({"error" : "Invalid party size"}), 400
+        return jsonify({"error" : "Party Size must be an integer from 1 to 8"}), 400
 
     # d. reservation time
-    reservation_time = data.get("reservation_time")
+    time_text = data.get("reservation_time")
 
     # Validate reservation_time (must be type str or not empty)                 # IMPROVE THIS: we still can accept any nonempty string, so use isoformat
-    if (type(reservation_time) is not str or not reservation_time.strip()): 
-        return jsonify({"error" : "Invalid reservation time"}), 400
+    try:
+        if not isinstance(time_text,str):
+            raise ValueError
+
+        reservation_time = datetime.strptime(time_text,"%Y-%m-%dT%H:%M",)
+    except ValueError:
+        return jsonify({
+            "error" : "Choose a vaild reservation data and time"
+        }), 400
+
+    if reservation_time <= datetime.now():
+        return jsonify({
+            "error" : "Choose a future reservation time"
+        }), 400
+
+    try:
+        booking = save_guest_reservation(
+        customer_name.strip(),
+        customer_phone,
+        party_size,
+        reservation_time,
+        )
+
+    except NoAvailableTable as error:
+        return jsonify({"error" : str(error)}), 409
+
+    except pyodbc.Error:
+        current_app.logger.exception(
+            "Azure SQL rservation operation failed."
+        )
+        return jsonify({
+            "error" : "Database Error, Check Flask terminal"
+        }), 500
+
+    return jsonify({
+        "message" : "Reservation has been made.",
+        "reservation_id" : booking["reservation_id"],
+        "table_id" : booking["table_id"],
+    }), 201
+
+
+
 
     # Once all checks pass, the reservation can be confirmed
     status = "confirmed"

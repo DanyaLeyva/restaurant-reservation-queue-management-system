@@ -172,8 +172,40 @@ function CustomerPage() {
   }
   // TODO (Danya): Create the reservation form
   // POST /api/reservations
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    const partySize = Number(reservation.party_size);
+    if(!Number.isInteger(partySize) || partySize < 1 || partySize > 8){
+      alert("Party size must be between 1 and 8.");
+      return;
+    }
+
+    try{
+      const response = await fetch(
+        "http://localhost:5000/api/reservations",
+        {
+          method:"POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer_name: reservation.customer_name.trim(),
+            customer_phone: reservation.customer_phone,
+            party_size: Number(reservation.party_size),
+            reservation_time: reservation.reservation_time,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if(!response.ok){
+        throw new Error(result.error || result.message || "Unable to make reservation.");
+      }
+
+      alert(`${result.message}\nReservation number: ${result.reservation_id}`);
+    } catch (error){
+      alert(error.message);
+    }
     console.log("Reservation:", reservation);
     alert("Reservation form submitted (demo only).");
   }
