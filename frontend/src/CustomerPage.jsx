@@ -226,13 +226,38 @@ function CustomerPage() {
     alert("Waitlist form submitted (demo only).");
   }
 
-  function handleReservationSearch(event) {
+  async function handleReservationSearch(event) {
     event.preventDefault();
 
-    console.log("Searching Reservation for: ", searchPhone);
+    const phone = searchPhone.replace(/[()\s-]/g, "");
 
     setMyReservations([]);
-    setLookupMessage("Reservation lookup is not connected to the backend yet.");
+
+    if(!/^[0-9]{10}$/.test(phone)){
+      setLookupMessage("Enter a vaild 10 phone number");
+    }
+
+    setLookupMessage("Searching for reservations...");
+
+    try{
+      const response = await fetch(
+        `http://localhost:5000/api/reservations/lookup?customer_phone=${encodeURIComponent(phone)}`
+      );
+
+      const result = await response.json();
+
+      if(!response.ok){
+        throw new Error(
+          result.error || "Unable to look up reservations."
+        );
+      }
+
+      setMyReservations(results.reservations ?? []);
+      setLookupMessage(result.message);
+
+    }catch (error){
+      setLookupMessage(error.message);
+    }
   }
 
   // TODO (Danya): Display the customer's reservations
@@ -422,6 +447,7 @@ function CustomerPage() {
 
             <button type="submit">Find Reservations</button>
           </form>
+          
 
           {lookupMessage && <p role="status">{lookupMessage}</p>}
           {myReservations.map((item) => (

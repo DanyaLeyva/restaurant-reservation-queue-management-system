@@ -3,6 +3,8 @@
 # Handles customer reservations
 # REQUIRED LIBRARIES: flask, mysql.connector, and os (os is not required to download, comes with Python Standard Library)
 
+from contextlib import closing
+
 from flask import Blueprint, request, jsonify, current_app #Eduardo, I add the current_app class
 from db import get_connection
 
@@ -118,7 +120,63 @@ def create_reservation():
         "table_id" : booking["table_id"],
     }), 201
 
+@reservations_bp.route("/api/reservations/lookup", methods=["GET"],)
+def loopkup_reservation():
+    phone=request.args.get("customer_phone", "")
 
+    phone = re.sub(r"[()\s-]","",phone)
+
+    if re.fullmatch(r"[0-9]{10}", phone) is None:
+        return jsonify({
+            "error" : "Enter a vaild 10-digit phone number."
+    }), 400
+
+    try:
+        with closing(get_connection()) as connection:
+            with closing(connection.cursor()) as cursor:
+                    cursor.execute(
+                        """
+                        SELECT
+                            r.reservationID,
+                            r.partySize,
+                            r.reservation_time,
+                            r.tableID
+                        FROM dbo.reservation AS r
+                        JOIN dbo.customer AS c
+                            on c.customerID = r.customerID
+                        WHERE c.Phone = ?
+                        ORDER BY r.reservation_time DESC
+                        """,
+                        (phone,),                        
+                        )
+                    rows=cursor.fetchall()
+        reservations = [{
+            "reservation_id" : row[0],
+            "party_size": row[1],
+            "reservation_time" : row[2].isoformat(
+                timespec = "minutes"
+            ),
+            "table_id": row[3],
+        }
+        for row in rows
+        ]
+
+        return jsonify({
+            "message" : (
+                "Reservation Found."
+            if reservations
+            else "No reservations found for that phone number"
+            ),
+            "reservations" : reservations,
+        }),200
+    except pyodbc.Error:
+        current_app.logger.exception(
+            "Reservation lookup failed"
+        )
+
+        return jsonify({
+            "error" : "Unable to lool up reservations."
+        }),500
 
 
     # Once all checks pass, the reservation can be confirmed
