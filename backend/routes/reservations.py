@@ -120,7 +120,7 @@ def create_reservation():
         "table_id" : booking["table_id"],
     }), 201
 
-@reservations_bp.route("/api/reservations", methods=["GET"],)
+@reservations_bp.route("/api/reservations/lookup", methods=["GET"],)
 def loopkup_reservation():
     phone=request.args.get("customer_phone", "")
 

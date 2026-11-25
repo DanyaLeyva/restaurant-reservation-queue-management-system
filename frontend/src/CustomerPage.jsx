@@ -252,7 +252,7 @@ function CustomerPage() {
         );
       }
 
-      setMyReservations(results.reservations ?? []);
+      setMyReservations(result.reservations ?? []);
       setLookupMessage(result.message);
 
     }catch (error){
