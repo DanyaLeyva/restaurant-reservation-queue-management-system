@@ -120,7 +120,7 @@ def create_reservation():
         "table_id" : booking["table_id"],
     }), 201
 
-@reservations_bp.route("/api/reservations/lookup", methods=["GET"],)
+@reservations_bp.route("/api/reservations", methods=["GET"],)
 def loopkup_reservation():
     phone=request.args.get("customer_phone", "")
 
@@ -178,147 +178,58 @@ def loopkup_reservation():
             "error" : "Unable to lool up reservations."
         }),500
 
-
-    # Once all checks pass, the reservation can be confirmed
-    status = "confirmed"
-
-    # Manipulating MySQL Database
-    # Establish communication with Python and mySQL database
-    connection = mysql.connector.connect(
-        host = os.environ["DB_HOST"],
-        user = os.environ["DB_USER"],
-        password = os.environ["DB_PASSWORD"],
-        database = "restauranttest"
-    )
-
-    # Allow SQL commands to execute via an existing connection / get results
-    cursor = connection.cursor()
-
-    # Making query for customer table 
-    # First, check if the customer already exists in the database
-    customer_query = """ SELECT customer_id
-                         FROM customer
-                         WHERE customer_name = %s
-                         AND customer_phone_number = %s
-                     """
-
-    customer_info = (customer_name, customer_phone)
-    cursor.execute(customer_query, customer_info) # Search the MySQL customer database for 
-    customer_exists = cursor.fetchone() # Obtain the matching customer if they exist
-
-    if customer_exists:
-        customer_id = customer_exists[0]
-    else: # The customer does not exist in the database, add them
-        customer_query = """INSERT INTO customer
-                            (customer_name, customer_phone)
-                            VALUES (%s, %s)    
-                         """
-        cursor.execute(customer_query, customer_info)
-        customer_id = cursor.lastrowid
-
-    # Making query for reservations table
-    reservations_query = """ INSERT INTO reservations
-                             (customer_id, party_size, reservation_time, created_at, status) 
-                             VALUES (%s, %s, %s, CURRENT_TIMESTAMP, %s)
-                         """
-
-    reservations_info = (customer_id, party_size, reservation_time, status) # check MySQL reservations database, does not look like it has status
-    cursor.execute(reservations_query, reservations_info) # Save into MySQL database for reservations
-    reservation_id = cursor.lastrowid # Get reservation_id from database
-
-    # Confirm and commit changes to MySQL database
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    # Confirm reservation and send back to frontend
-    response = {"message" : "Reservation has been made.",
-                "reservation_id" : reservation_id,
-                "status" : status
-               }
-
-    return jsonify(response), 201
-
 # TODO (Kristopher): View all reservations
-# GET /api/reservations
-@reservations_bp.route("/api/reservations", methods = ["GET"])
+# GET /api/staff/reservations
+@reservations_bp.route("/api/staff/reservations", methods = ["GET"])
 
-def view_all_reservations():
-    # Connect to MySQL database
-    connection = mysql.connector.connect(
-            host = os.environ["DB_HOST"],
-            user = os.environ["DB_USER"],
-            password = os.environ["DB_PASSWORD"],
-            database = "restauranttest"
+def get_all_reservations():
+    try:
+        with closing(get_connection()) as connection:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        r.reservationID,
+                        c.name,
+                        c.Phone,
+                        r.partySize,
+                        r.reservation_time,
+                        r.tableID
+                    FROM dbo.reservation AS r
+                    JOIN dbo.customer AS c
+                        on c.customerID = r.customerID
+                    ORDER BY r.reservationID DESC
+                    """
+                )
+
+                rows = cursor.fetchall()
+
+        reservations = [
+            {
+                "reservation_id" : row[0],
+                "customer_name": row[1],
+                "customer_phone": row[2],
+                "party_size": row[3],
+                "reservation_time": row[4].isoformat(
+                    timespec="minutes"
+                ),
+                "table_id": row[5],
+            }
+            for row in rows
+        ]
+
+        response = jsonify({"reservations" : reservations})
+        response.headers["Cache-Control"] = "no=store"
+        return response,200
+    
+    except pyodbc.Error:
+        current_app.logger.exception(
+            "Unable to load staff reservations"
         )
-    cursor = connection.cursor(dictionary = True) # Get results from query as a dictionary
-    
-    # From reservations database, obtain all reservation information
-    query = "SELECT * FROM reservations"
 
-    cursor.execute(query) # execute the query
-
-    # Grab the reservation records / results of cursor execution of query
-    reservation_list = cursor.fetchall()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message" : "Reservation List",
-                    "reservations" : reservation_list}), 200
-
-# TODO (Kristopher): View reservations for one customer
-# GET /api/reservations?customer_phone=...
-@reservations_bp.route("/api/reservations", methods = ["GET"])
-
-def view_customer_reservation():
-
-    # Obtain customer's phone number from the url
-    customer_phone = request.args.get("customer_phone")
-
-    # Connect to MySQL database
-    connection = mysql.connector.connect(
-                 host = os.environ["DB_HOST"],
-                 user = os.environ["DB_USER"],
-                 password = os.environ["DB_PASSWORD"],
-                 database = "restauranttest"
-                 )
-    
-    # Allow SQL commands to execute via an existing connection
-    cursor = connection.cursor()
-
-    # Make a query that searches for the customer id based on customer phone number
-    customer_query = """
-                     SELECT customer_id
-                     FROM customer
-                     WHERE customer_phone_number = %s
-                     """
-
-    cursor.execute(customer_query, (customer_phone,))
-
-    customer = cursor.fetchone() # grab the customer from the database, should return a tuple (ex. (5,))
-    if customer:
-        customer_id = customer[0] # extract id from tuple
-    elif customer is None:
-        cursor.close()
-        connection.close()
-        return jsonify({"error" : "Customer does not exist."}), 404
-
-
-    # Make a secondary query that searches for a specific customer's reservations based on their ID
-    reservation_query = """
-                        SELECT *
-                        FROM reservations
-                        WHERE customer_id = %s
-                        """
-
-    cursor.execute(reservation_query, (customer_id, ))
-    customer_reservations = cursor.fetchall()
-
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message" : "Reservations In Progress",
-                    "reservations" : customer_reservations}), 200
+        return jsonify({
+            "error" : "Unable to load reservations"
+        }), 500
 
 # TODO (Kristopher): Cancel a reservation
 # PATCH /api/reservations/<reservation_id>/cancel

@@ -1,7 +1,7 @@
 // frontend/src/StaffPage.jsx
 // Owner: Danya
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // TODO (Danya): Display the restaurant's reservations
 // GET /api/reservations
@@ -65,6 +65,60 @@ function StaffPage() {
   const [activeTab, setActiveTab] = useState("reservations");
   const [reservations, setReservations] = useState([]);
   const [showLogin, setShowLogin] = useState(true);
+
+  const [reservationsLoading, setReservationsLoading] = useState(true);
+  const [reservationsError, setReservationsError] = useState("");
+
+  useEffect(() => {
+    if (showLogin) return;
+
+    let stopped = false;
+    let refreshTimer;
+    const controller = new AbortController();
+
+    async function loadReservations() {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/staff/reservations",
+          {
+            signal: controller.signal,
+            cache: "no-store",
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error || "Unable to load reservations."
+          );
+        }
+
+        if (!stopped) {
+          setReservations(result.reservations ?? []);
+          setReservationsError("");
+        }
+      } catch (error) {
+        if (!stopped && error.name !== "AbortError") {
+          setReservationsError(error.message);
+        }
+      } finally {
+        if (!stopped) {
+          setReservationsLoading(false);
+          refreshTimer = setTimeout(loadReservations, 15000);
+        }
+      }
+    }
+
+    setReservationsLoading(true);
+    loadReservations();
+
+    return () => {
+      stopped = true;
+      clearTimeout(refreshTimer);
+      controller.abort();
+    };
+  }, [showLogin]);
 
   // test
   const [waitlist, setWaitlist] = useState([
@@ -214,28 +268,40 @@ function StaffPage() {
           <h2>Reservations</h2>
           <p>View and manage upcoming customer reservations.</p>
 
-          {reservations.length === 0 ? (
-            <p>No reservations available.</p>
-          ) : (
-            <div className="reservation-list">
+          {reservationsError && (
+            <p role="alert">{reservationsError}</p>
+          )}
+
+          {reservationsLoading && (
+            <p>Loading reservations....</p>
+          )}
+
+          {!reservationsLoading && !reservationsError && reservations.length ===0 && (
+            <p> No reservations available</p>
+          )}
+
+          {!reservationsLoading && reservations.length > 0 &&(
+            <div className ="reservation-list">
               {reservations.map((reservation) => (
                 <div
                   className="reservation-card"
                   key={reservation.reservation_id}
-                >
-                  <h3>{reservation.customer_name}</h3>
-                  <p>Phone: {reservation.customer_phone}</p>
-                  <p>Party Size: {reservation.party_size}</p>
-                  <p>
-                    Date & Time:{" "}
-                    {reservation.reservation_time
-                      ? new Date(reservation.reservation_time).toLocaleString()
-                      : "Not specified"}
-                  </p>
-                  <p>Status: {reservation.status}</p>
-                </div>
+                  >
+                    <h3>{reservation.customer_name}</h3>
+
+                    <p>Reservation Number: {reservation.reservation_id}</p>
+                    <p>Phone: {reservation.customer_phone}</p>
+                    <p>Party Size: {reservation.party_size}</p>
+
+                    <p>
+                      Date & Time: {" "}
+                      {reservation.reservation_time ? new Date(reservation.reservation_time).toLocaleString(): "Not specified"}
+                    </p>
+
+                    <p>Table: {reservation.table_id}</p>
+                  </div>
               ))}
-            </div>
+              </div>
           )}
         </div>
       )}
