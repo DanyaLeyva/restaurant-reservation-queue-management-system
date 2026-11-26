@@ -8,30 +8,30 @@ function CustomerLogin({ onSignUp }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
- async function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
 
     //TODO: connect to backend authentication API
     //Do not grant access until the backend verifies credentials.
 
-    try{
+    try {
       const response = await fetch("http://localhost:5000/api/customers", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({name, phone}),
+        body: JSON.stringify({ name, phone }),
       });
 
       const result = await response.json();
 
-      if(!response.ok){
+      if (!response.ok) {
         throw new Error(result.message || "Registration Failed.");
       }
-      alert(result.message)
+      alert(result.message);
       setName("");
       setPhone("");
-    } catch (error){
+    } catch (error) {
       alert(error.message);
     }
 
@@ -155,6 +155,7 @@ function CustomerPage() {
   const [searchPhone, setSearchPhone] = useState("");
   const [myReservations, setMyReservations] = useState([]);
   const [lookupMessage, setLookupMessage] = useState("");
+  const [myWaitlistEntry, setMyWaitlistEntry] = useState(null);
 
   // Use these exact field names:
   // customer_name
@@ -175,35 +176,44 @@ function CustomerPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     const partySize = Number(reservation.party_size);
-    if(!Number.isInteger(partySize) || partySize < 1 || partySize > 8){
+    if (!Number.isInteger(partySize) || partySize < 1 || partySize > 8) {
       alert("Party size must be between 1 and 8.");
       return;
     }
 
-    try{
-      const response = await fetch(
-        "http://localhost:5000/api/reservations",
-        {
-          method:"POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            customer_name: reservation.customer_name.trim(),
-            customer_phone: reservation.customer_phone,
-            party_size: Number(reservation.party_size),
-            reservation_time: reservation.reservation_time,
-          }),
-        }
-      );
+    try {
+      const response = await fetch("http://localhost:5000/api/reservations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer_name: reservation.customer_name.trim(),
+          customer_phone: reservation.customer_phone,
+          party_size: Number(reservation.party_size),
+          reservation_time: reservation.reservation_time,
+        }),
+      });
 
       const result = await response.json();
-      if(!response.ok){
-        throw new Error(result.error || result.message || "Unable to make reservation.");
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to make reservation.",
+        );
       }
 
-      alert(`${result.message}\nReservation number: ${result.reservation_id}`);
-    } catch (error){
+      if (result.status === "confirmed") {
+        alert(
+          `Your reservation is confirmed!\nReservation number: ${result.reservation_id}`,
+        );
+      } else if (result.status === "pending") {
+        alert(
+          `Your reservation is pending staff approval.\nReservation number: ${result.reservation_id}`,
+        );
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
       alert(error.message);
     }
     console.log("Reservation:", reservation);
@@ -219,11 +229,77 @@ function CustomerPage() {
     });
   }
 
-  function handleWaitlistSubmit(event) {
+  async function handleWaitlistSubmit(event) {
     event.preventDefault();
 
-    console.log("waitlist:", waitlist);
-    alert("Waitlist form submitted (demo only).");
+    try {
+      const response = await fetch("http://localhost:5000/api/waitlist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer_name: waitlist.customer_name.trim(),
+          customer_phone: waitlist.customer_phone,
+          party_size: Number(waitlist.party_size),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to join waitlist.",
+        );
+      }
+
+      setMyWaitlistEntry({
+        ...waitlist,
+        waitlist_id: result.waitlist_id,
+        status: "waiting",
+      });
+
+      alert("You have successfully joined the waitlist.");
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  async function handleCancelWaitlist(waitlistId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to leave the waitlist?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/waitlist/${waitlistId}/cancel`,
+        {
+          method: "PATCH",
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to cancel waitlist entry.",
+        );
+      }
+
+      setMyWaitlistEntry((previous) =>
+        previous && previous.waitlist_id === waitlistId
+          ? { ...previous, status: "cancelled" }
+          : previous,
+      );
+
+      alert("You have been removed from the waitlist.");
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
   async function handleReservationSearch(event) {
@@ -233,30 +309,66 @@ function CustomerPage() {
 
     setMyReservations([]);
 
-    if(!/^[0-9]{10}$/.test(phone)){
-      setLookupMessage("Enter a vaild 10 phone number");
+    if (!/^[0-9]{10}$/.test(phone)) {
+      setLookupMessage("Enter a valid 10-digit phone number.");
+      return;
     }
 
     setLookupMessage("Searching for reservations...");
 
-    try{
+    try {
       const response = await fetch(
-        `http://localhost:5000/api/reservations/lookup?customer_phone=${encodeURIComponent(phone)}`
+        `http://localhost:5000/api/reservations/lookup?customer_phone=${encodeURIComponent(phone)}`,
       );
 
       const result = await response.json();
 
-      if(!response.ok){
-        throw new Error(
-          result.error || "Unable to look up reservations."
-        );
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to look up reservations.");
       }
 
       setMyReservations(result.reservations ?? []);
       setLookupMessage(result.message);
-
-    }catch (error){
+    } catch (error) {
       setLookupMessage(error.message);
+    }
+  }
+  async function handleCancelReservation(reservationId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel your reservation?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/reservations/${reservationId}/cancel`,
+        {
+          method: "PATCH",
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to cancel reservation.",
+        );
+      }
+
+      setMyReservations((previous) =>
+        previous.map((item) =>
+          item.reservation_id === reservationId
+            ? { ...item, status: "cancelled" }
+            : item,
+        ),
+      );
+
+      alert("Your reservation has been cancelled.");
+    } catch (error) {
+      alert(error.message);
     }
   }
 
@@ -287,7 +399,8 @@ function CustomerPage() {
           <h1>Make a Reservation</h1>
           <p>Fill out the information below to request a table.</p>
           <p>
-            Maximum 8 guests per party. One reservation per customer per day.
+            Reservations for 1–4 guests are automatically confirmed based on
+            availability. Parties of 5–8 guests require staff approval.{" "}
           </p>
 
           <form onSubmit={handleSubmit}>
@@ -421,6 +534,24 @@ function CustomerPage() {
 
             <button type="submit">Join Waitlist</button>
           </form>
+          {myWaitlistEntry && (
+            <div className="waitlist-entry">
+              <h3>Your Waitlist Entry</h3>
+              <p>Name: {myWaitlistEntry.customer_name}</p>
+              <p>Party Size: {myWaitlistEntry.party_size}</p>
+              <p>Status: {myWaitlistEntry.status}</p>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleCancelWaitlist(myWaitlistEntry.waitlist_id)
+                }
+                disabled={myWaitlistEntry.status === "cancelled"}
+              >
+                Leave Waitlist
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -447,7 +578,6 @@ function CustomerPage() {
 
             <button type="submit">Find Reservations</button>
           </form>
-          
 
           {lookupMessage && <p role="status">{lookupMessage}</p>}
           {myReservations.map((item) => (
@@ -457,8 +587,12 @@ function CustomerPage() {
               <p>Party Size: {item.party_size}</p>
               <p>Date & Time: {item.reservation_time}</p>
               <p>Status: {item.status}</p>
-              <button type="button" disabled>
-                Cancel Reservation
+              <button
+                type="button"
+                onClick={() => handleCancelReservation(item.reservation_id)}
+                disabled={item.status === "cancelled"}
+              >
+                cancel Reservation
               </button>
             </div>
           ))}

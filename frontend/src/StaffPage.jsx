@@ -83,15 +83,13 @@ function StaffPage() {
           {
             signal: controller.signal,
             cache: "no-store",
-          }
+          },
         );
 
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            result.error || "Unable to load reservations."
-          );
+          throw new Error(result.error || "Unable to load reservations.");
         }
 
         if (!stopped) {
@@ -120,58 +118,147 @@ function StaffPage() {
     };
   }, [showLogin]);
 
-  // test
-  const [waitlist, setWaitlist] = useState([
-    {
-      waitlist_id: 1,
-      customer_name: "Jane Doe",
-      customer_phone: "(310) 555-0101",
-      party_size: 2,
-      status: "waiting",
-    },
-    {
-      waitlist_id: 2,
-      customer_name: "John Smith",
-      customer_phone: "(310) 555-0102",
-      party_size: 4,
-      status: "waiting",
-    },
-    {
-      waitlist_id: 3,
-      customer_name: "Maria Lopez",
-      customer_phone: "(310) 555-0103",
-      party_size: 8,
-      status: "waiting",
-    },
-  ]);
+  const [waitlist, setWaitlist] = useState([]);
+  const [waitlistLoading, setWaitlistLoading] = useState(true);
+  const [waitlistError, setWaitlistError] = useState("");
 
-  const [tables, setTables] = useState([
-    { table_id: 1, capacity: 2, status: "available" },
-    { table_id: 2, capacity: 2, status: "available" },
-    { table_id: 3, capacity: 2, status: "available" },
-    { table_id: 4, capacity: 2, status: "available" },
-    { table_id: 5, capacity: 4, status: "available" },
-    { table_id: 6, capacity: 4, status: "available" },
-    { table_id: 7, capacity: 4, status: "available" },
-    { table_id: 8, capacity: 4, status: "available" },
-    { table_id: 9, capacity: 8, status: "available" },
-    { table_id: 10, capacity: 8, status: "available" },
-  ]);
+  useEffect(() => {
+    if (showLogin) return;
 
-  function handleTableStatus(tableId) {
-    setTables((currentTables) =>
-      currentTables.map((table) =>
-        table.table_id === tableId
-          ? {
-              ...table,
-              status: table.status === "available" ? "occupied" : "available",
-            }
-          : table,
-      ),
-    );
+    let stopped = false;
+    let refreshTimer;
+    const controller = new AbortController();
+
+    async function loadWaitlist() {
+      try {
+        const response = await fetch("http://localhost:5000/api/waitlist", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Unable to load waitlist.");
+        }
+
+        if (!stopped) {
+          setWaitlist(result.waitlist ?? []);
+          setWaitlistError("");
+        }
+      } catch (error) {
+        if (!stopped && error.name !== "AbortError") {
+          setWaitlistError(error.message);
+        }
+      } finally {
+        if (!stopped) {
+          setWaitlistLoading(false);
+          refreshTimer = setTimeout(loadWaitlist, 15000);
+        }
+      }
+    }
+
+    setWaitlistLoading(true);
+    loadWaitlist();
+
+    return () => {
+      stopped = true;
+      clearTimeout(refreshTimer);
+      controller.abort();
+    };
+  }, [showLogin]);
+
+  const [tables, setTables] = useState([]);
+  const [tablesLoading, setTablesLoading] = useState(true);
+  const [tablesError, setTablesError] = useState("");
+
+  useEffect(() => {
+    if (showLogin) return;
+
+    let stopped = false;
+    let refreshTimer;
+    const controller = new AbortController();
+
+    async function loadTables() {
+      try {
+        const response = await fetch("http://localhost:5000/api/tables", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Unable to load tables.");
+        }
+
+        if (!stopped) {
+          setTables(result.tables ?? []);
+          setTablesError("");
+        }
+      } catch (error) {
+        if (!stopped && error.name !== "AbortError") {
+          setTablesError(error.message);
+        }
+      } finally {
+        if (!stopped) {
+          setTablesLoading(false);
+          refreshTimer = setTimeout(loadTables, 15000);
+        }
+      }
+    }
+
+    setTablesLoading(true);
+    loadTables();
+
+    return () => {
+      stopped = true;
+      clearTimeout(refreshTimer);
+      controller.abort();
+    };
+  }, [showLogin]);
+
+  async function handleTableStatus(tableId) {
+    const selectedTable = tables.find((table) => table.table_id === tableId);
+
+    if (!selectedTable) return;
+
+    const newStatus =
+      selectedTable.status === "available" ? "occupied" : "available";
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/tables/${tableId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to update table status.",
+        );
+      }
+
+      setTables((currentTables) =>
+        currentTables.map((table) =>
+          table.table_id === tableId ? { ...table, status: newStatus } : table,
+        ),
+      );
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
-  function handleAssignTable(waitlistId, tableId) {
+  async function handleAssignTable(waitlistId, tableId) {
     const selectedTable = tables.find(
       (table) => table.table_id === Number(tableId),
     );
@@ -186,39 +273,133 @@ function StaffPage() {
     );
 
     if (!customer || selectedTable.capacity < Number(customer.party_size)) {
-      alert("This table cannot acommodate the party.");
+      alert("This table cannot accommodate the party.");
       return;
     }
 
-    setWaitlist((currentWaitlist) =>
-      currentWaitlist.map((person) =>
-        person.waitlist_id === waitlistId
-          ? {
-              ...person,
-              assigned_table: selectedTable.table_id,
-              status: "seated",
-            }
-          : person,
-      ),
-    );
-    setTables((currentTables) =>
-      currentTables.map((table) =>
-        table.table_id === selectedTable.table_id
-          ? { ...table, status: "occupied" }
-          : table,
-      ),
-    );
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/waitlist/${waitlistId}/assign-table`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            table_id: Number(tableId),
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to assign table.",
+        );
+      }
+
+      setWaitlist((currentWaitlist) =>
+        currentWaitlist.map((person) =>
+          person.waitlist_id === waitlistId
+            ? {
+                ...person,
+                table_id: selectedTable.table_id,
+                status: "seated",
+              }
+            : person,
+        ),
+      );
+
+      setTables((currentTables) =>
+        currentTables.map((table) =>
+          table.table_id === selectedTable.table_id
+            ? { ...table, status: "occupied" }
+            : table,
+        ),
+      );
+
+      alert(result.message || "Table assigned successfully.");
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
-  function handleNotifyCustomer(waitlistId) {
-    setWaitlist((currentWaitlist) =>
-      currentWaitlist.map((customer) =>
-        customer.waitlist_id === waitlistId
-          ? { ...customer, status: "notified" }
-          : customer,
-      ),
+  async function handleReservationDecision(reservationId, decision) {
+    const confirmed = window.confirm(
+      `Are you sure you want to ${decision} this reservation?`,
     );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/reservations/${reservationId}/${decision}`,
+        {
+          method: "PATCH",
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to update reservation.",
+        );
+      }
+
+      setReservations((previous) =>
+        previous.map((reservation) =>
+          reservation.reservation_id === reservationId
+            ? {
+                ...reservation,
+                status: decision === "approve" ? "confirmed" : "declined",
+              }
+            : reservation,
+        ),
+      );
+
+      alert(result.message || "Reservation updated successfully.");
+    } catch (error) {
+      alert(error.message);
+    }
   }
+  async function handleNotifyCustomer(waitlistId) {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/waitlist/${waitlistId}/notify`,
+        {
+          method: "POST",
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Unable to notify customer.",
+        );
+      }
+
+      setWaitlist((currentWaitlist) =>
+        currentWaitlist.map((customer) =>
+          customer.waitlist_id === waitlistId
+            ? { ...customer, status: "notified" }
+            : customer,
+        ),
+      );
+
+      alert(result.message || "Customer marked as notified.");
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  const pendingReservations = reservations.filter(
+    (reservation) => reservation.status === "pending",
+  ).length;
 
   const totalTables = tables.length;
 
@@ -253,6 +434,7 @@ function StaffPage() {
       <div className="staff-tabs">
         <button type="button" onClick={() => setActiveTab("reservations")}>
           Reservations
+          {pendingReservations > 0 && `(${pendingReservations})`}
         </button>
 
         <button type="button" onClick={() => setActiveTab("waitlist")}>
@@ -268,40 +450,66 @@ function StaffPage() {
           <h2>Reservations</h2>
           <p>View and manage upcoming customer reservations.</p>
 
-          {reservationsError && (
-            <p role="alert">{reservationsError}</p>
-          )}
+          {reservationsError && <p role="alert">{reservationsError}</p>}
 
-          {reservationsLoading && (
-            <p>Loading reservations....</p>
-          )}
+          {reservationsLoading && <p>Loading reservations....</p>}
 
-          {!reservationsLoading && !reservationsError && reservations.length ===0 && (
-            <p> No reservations available</p>
-          )}
+          {!reservationsLoading &&
+            !reservationsError &&
+            reservations.length === 0 && <p> No reservations available</p>}
 
-          {!reservationsLoading && reservations.length > 0 &&(
-            <div className ="reservation-list">
+          {!reservationsLoading && reservations.length > 0 && (
+            <div className="reservation-list">
               {reservations.map((reservation) => (
                 <div
                   className="reservation-card"
                   key={reservation.reservation_id}
-                  >
-                    <h3>{reservation.customer_name}</h3>
+                >
+                  <h3>{reservation.customer_name}</h3>
 
-                    <p>Reservation Number: {reservation.reservation_id}</p>
-                    <p>Phone: {reservation.customer_phone}</p>
-                    <p>Party Size: {reservation.party_size}</p>
+                  <p>Reservation Number: {reservation.reservation_id}</p>
+                  <p>Phone: {reservation.customer_phone}</p>
+                  <p>Party Size: {reservation.party_size}</p>
 
-                    <p>
-                      Date & Time: {" "}
-                      {reservation.reservation_time ? new Date(reservation.reservation_time).toLocaleString(): "Not specified"}
-                    </p>
+                  <p>
+                    Date & Time:{" "}
+                    {reservation.reservation_time
+                      ? new Date(reservation.reservation_time).toLocaleString()
+                      : "Not specified"}
+                  </p>
 
-                    <p>Table: {reservation.table_id}</p>
-                  </div>
+                  <p>Status: {reservation.status}</p>
+                  <p>Table: {reservation.table_id ?? "Not assigned"}</p>
+                  {reservation.status === "pending" && (
+                    <div className="reservation-actions">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleReservationDecision(
+                            reservation.reservation_id,
+                            "approve",
+                          )
+                        }
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleReservationDecision(
+                            reservation.reservation_id,
+                            "decline",
+                          )
+                        }
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
-              </div>
+            </div>
           )}
         </div>
       )}
@@ -309,8 +517,11 @@ function StaffPage() {
         <div>
           <h2>Waitlist</h2>
           <p>View customers currently waiting for a table.</p>
-          {waitlist.length === 0 ? (
-            <p>No customers currently waiting for a table</p>
+          {waitlistError && <p role="alert">{waitlistError}</p>}
+
+          {waitlistLoading && <p>Loading waitlist...</p>}
+          {waitlistLoading || waitlistError ? null : waitlist.length === 0 ? (
+            <p>No customers currently waiting for a table.</p>
           ) : (
             <div className="waitlist-list">
               {waitlist.map((customer, index) => (
@@ -320,8 +531,8 @@ function StaffPage() {
                   <p>Phone: {customer.customer_phone}</p>
                   <p>Party Size: {customer.party_size}</p>
                   <p>Status: {customer.status}</p>
-                  {customer.assigned_table && (
-                    <p>Assigned Table: {customer.assigned_table}</p>
+                  {customer.table_id && (
+                    <p>Assigned Table: {customer.table_id}</p>
                   )}
 
                   {customer.status === "waiting" && (

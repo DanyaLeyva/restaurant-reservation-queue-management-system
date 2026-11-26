@@ -294,5 +294,33 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+/* Staff reservation approval actions */
+
+.reservation-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.reservation-actions button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+.reservation-actions button:first-child {
+  background-color: #4a6741;
+}
+
+.reservation-actions button:last-child {
+  background-color: #a94442;
+}
+
+.reservation-actions button:hover {
+  opacity: 0.85;
+}
 
 
