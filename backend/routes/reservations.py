@@ -31,6 +31,9 @@ reservations_bp = Blueprint("reservations", __name__)
 # Uses: customer_name, customer_phone, party_size, reservation_time
 # New reservations should have the status "confirmed"
 
+# NOTE: one requirement we stated was to allow at most one reservation per day. We still need handling for these:
+# - Identify a user, and at identification do not allow to proceed further if they already have a reservation.
+
 # Create route, accept POST requests to send data
 @reservations_bp.route("/api/reservations", methods = ["POST"])
 
@@ -58,13 +61,14 @@ def create_reservation():
     if (type(customer_phone) is not str or not customer_phone.strip()):
         return jsonify({"error" : "Invalid phone number"}), 400
 
+    # In the stored customer phone, ensure we remove these characters so we have a 10 digit number: () \s - 
     customer_phone = re.sub(r"[()\s-]", "", customer_phone)
 
     # validate customer_phone (must be str size 10, and the str must be digits)
     if (len(customer_phone) != 10 or not customer_phone.isdigit() or not customer_phone.isascii()):
         return jsonify({"error" : "Invalid phone number"}), 400
 
-    # c. party size                                                             # ADJUST: party size max needs to be defined at some point
+    # c. party size                                                             
     party_size = data.get("party_size")
 
     # Validate party_size (must be type int and between [1, 8])
