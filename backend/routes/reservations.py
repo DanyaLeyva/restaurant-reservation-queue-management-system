@@ -72,9 +72,9 @@ def create_reservation():
     # c. party size                                                             # ADJUST: party size max needs to be defined at some point
     party_size = data.get("party_size")
 
-    # Validate party_size (must be type int and at least of size 1)
-    if (type(party_size) is not int or party_size < 1):
-        return jsonify({"error" : "Party Size must be an integer from 1 to 8"}), 400
+    # Validate party_size (must be type int and between [1, 8])
+    if (type(party_size) is not int or (party_size >= 1 and party_size <= 8)):
+        return jsonify({"error" : "Party size must be an integer from 1 to 8."}), 400
 
     # d. reservation time
     time_text = data.get("reservation_time")
