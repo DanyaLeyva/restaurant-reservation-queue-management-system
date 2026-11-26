@@ -58,12 +58,7 @@ def create_reservation():
     if (type(customer_phone) is not str or not customer_phone.strip()):
         return jsonify({"error" : "Invalid phone number"}), 400
 
-    phone_number_translation_table = str.maketrans({"(" : "", 
-                                                    ")" : "",
-                                                    "-" : "",
-                                                    " " : ""}) # translation table to convert [(, ), -, " "] to empty ""
-    
-    customer_phone = customer_phone.strip().translate(phone_number_translation_table) # remove [(, ), -, " "] to make a standardized phone number string with only 10 digits from 0-9
+    customer_phone = re.sub(r"[()\s-]", "", customer_phone)
 
     # validate customer_phone (must be str size 10, and the str must be digits)
     if (len(customer_phone) != 10 or not customer_phone.isdigit() or not customer_phone.isascii()):
