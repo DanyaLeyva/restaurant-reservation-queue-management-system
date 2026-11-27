@@ -1,6 +1,7 @@
 # backend/routes/waitlist.py
 # Owner: Alejandro Garcia
 # Handles the restaurant waitlist
+# Required Libraries: flask (uuid and datetime is part of Python's Standard Library)
 
 from flask import Blueprint, request, jsonify
 import uuid
@@ -110,7 +111,7 @@ def assign_table(waitlist_id):
 # Use the notification function from notifications.py
 
 @waitlist_bp.route("/<waitlist_id>/notify", methods = ["POST"])
-def notify_customer(waitlist_id):
+def notify_waitlisted_customer(waitlist_id):
     for entry in waitlist:
         if entry["waitlist_id"] == waitlist_id:
             if entry["table_id"] is None:
